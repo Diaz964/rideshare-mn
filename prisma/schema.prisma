@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  PASSENGER
+  DRIVER
+  ADMIN
+}
+
+enum RideStatus {
+  REQUESTED
+  ACCEPTED
+  DRIVER_ARRIVING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum DriverStatus {
+  OFFLINE
+  AVAILABLE
+  ON_RIDE
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  phone          String?
+  passwordHash   String
+  role           UserRole  @default(PASSENGER)
+  avatarUrl      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  driver         Driver?
+  ridesAsPassenger Ride[]  @relation("PassengerRides")
+  ratingsGiven   Rating[]  @relation("RatingsGiven")
+  ratingsReceived Rating[] @relation("RatingsReceived")
+  payments       Payment[]
+
+  @@map("users")
+}
+
+model Driver {
+  id              String       @id @default(cuid())
+  userId          String       @unique
+  user            User         @relation(fields: [userId], references: [id])
+  licenseNumber   String
+  licenseExpiry   DateTime
+  status          DriverStatus @default(OFFLINE)
+  currentLat      Float?
+  currentLng      Float?
+  rating          Float        @default(5.0)
+  totalRides      Int          @default(0)
+  totalEarnings   Float        @default(0)
+  isVerified      Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  vehicle         Vehicle?
+  rides           Ride[]       @relation("DriverRides")
+
+  @@map("drivers")
+}
+
+model Vehicle {
+  id            String   @id @default(cuid())
+  driverId      String   @unique
+  driver        Driver   @relation(fields: [driverId], references: [id])
+  make          String
+  model         String
+  year          Int
+  color         String
+  licensePlate  String
+  capacity      Int      @default(4)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("vehicles")
+}
+
+model Ride {
+  id              String      @id @default(cuid())
+  passengerId     String
+  passenger       User        @relation("PassengerRides", fields: [passengerId], references: [id])
+  driverId        String?
+  driver          Driver?     @relation("DriverRides", fields: [driverId], references: [id])
+  status          RideStatus  @default(REQUESTED)
+
+  pickupLat       Float
+  pickupLng       Float
+  pickupAddress   String
+  dropoffLat      Float
+  dropoffLng      Float
+  dropoffAddress  String
+
+  estimatedFare   Float
+  actualFare      Float?
+  distance        Float?
+  duration        Int?
+
+  requestedAt     DateTime    @default(now())
+  acceptedAt      DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+
+  payment         Payment?
+  rating          Rating?
+
+  @@map("rides")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  rideId          String        @unique
+  ride            Ride          @relation(fields: [rideId], references: [id])
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  amount          Float
+  currency        String        @default("USD")
+  status          PaymentStatus @default(PENDING)
+  stripePaymentId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+model Rating {
+  id          String   @id @default(cuid())
+  rideId      String   @unique
+  ride        Ride     @relation(fields: [rideId], references: [id])
+  giverId     String
+  giver       User     @relation("RatingsGiven", fields: [giverId], references: [id])
+  receiverId  String
+  receiver    User     @relation("RatingsReceived", fields: [receiverId], references: [id])
+  score       Int
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  @@map("ratings")
+}
