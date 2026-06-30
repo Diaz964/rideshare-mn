@@ -3,19 +3,19 @@
 :root {
   --background: #ffffff;
   --foreground: #1a1a1a;
-  --burgundy: #800020;
-  --burgundy-light: #a3243b;
-  --burgundy-dark: #5c0015;
-  --burgundy-50: #fdf2f4;
-  --burgundy-100: #fbe5e9;
-  --burgundy-200: #f5c0ca;
-  --burgundy-300: #ef9bab;
-  --burgundy-400: #d44d66;
-  --burgundy-500: #b91c3a;
-  --burgundy-600: #800020;
-  --burgundy-700: #5c0015;
-  --burgundy-800: #3d000e;
-  --burgundy-900: #1e0007;
+  --burgundy: #b91c1c;
+  --burgundy-light: #dc2626;
+  --burgundy-dark: #7f1d1d;
+  --burgundy-50: #fef2f2;
+  --burgundy-100: #fee2e2;
+  --burgundy-200: #fecaca;
+  --burgundy-300: #fca5a5;
+  --burgundy-400: #f87171;
+  --burgundy-500: #ef4444;
+  --burgundy-600: #dc2626;
+  --burgundy-700: #b91c1c;
+  --burgundy-800: #991b1b;
+  --burgundy-900: #450a0a;
 }
 
 @theme inline {
