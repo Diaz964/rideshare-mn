@@ -2,12 +2,38 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1a1a1a;
+  --burgundy: #800020;
+  --burgundy-light: #a3243b;
+  --burgundy-dark: #5c0015;
+  --burgundy-50: #fdf2f4;
+  --burgundy-100: #fbe5e9;
+  --burgundy-200: #f5c0ca;
+  --burgundy-300: #ef9bab;
+  --burgundy-400: #d44d66;
+  --burgundy-500: #b91c3a;
+  --burgundy-600: #800020;
+  --burgundy-700: #5c0015;
+  --burgundy-800: #3d000e;
+  --burgundy-900: #1e0007;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-burgundy: var(--burgundy);
+  --color-burgundy-light: var(--burgundy-light);
+  --color-burgundy-dark: var(--burgundy-dark);
+  --color-burgundy-50: var(--burgundy-50);
+  --color-burgundy-100: var(--burgundy-100);
+  --color-burgundy-200: var(--burgundy-200);
+  --color-burgundy-300: var(--burgundy-300);
+  --color-burgundy-400: var(--burgundy-400);
+  --color-burgundy-500: var(--burgundy-500);
+  --color-burgundy-600: var(--burgundy-600);
+  --color-burgundy-700: var(--burgundy-700);
+  --color-burgundy-800: var(--burgundy-800);
+  --color-burgundy-900: var(--burgundy-900);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
