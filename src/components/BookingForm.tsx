@@ -3,28 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-declare global {
-  interface Window {
-    google?: {
-      maps: {
-        places: {
-          Autocomplete: new (
-            input: HTMLInputElement,
-            options?: Record<string, unknown>
-          ) => GoogleAutocomplete;
-        };
-      };
-    };
-    initGoogleMaps?: () => void;
-  }
+interface NominatimResult {
+  display_name: string;
+  place_id: number;
 }
-
-interface GoogleAutocomplete {
-  addListener: (event: string, callback: () => void) => void;
-  getPlace: () => { formatted_address?: string; name?: string };
-}
-
-const GOOGLE_MAPS_API_KEY = "AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8";
 
 const RIDE_OPTIONS = [
   {
@@ -55,53 +37,83 @@ export default function BookingForm() {
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [selectedRide, setSelectedRide] = useState("");
-  const pickupRef = useRef<HTMLInputElement>(null);
-  const destRef = useRef<HTMLInputElement>(null);
-  const mapsLoadedRef = useRef(false);
+  const [pickupSuggestions, setPickupSuggestions] = useState<NominatimResult[]>(
+    []
+  );
+  const [destSuggestions, setDestSuggestions] = useState<NominatimResult[]>([]);
+  const [showPickupDropdown, setShowPickupDropdown] = useState(false);
+  const [showDestDropdown, setShowDestDropdown] = useState(false);
+  const pickupRef = useRef<HTMLDivElement>(null);
+  const destRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  const initAutocomplete = useCallback(() => {
-    if (!window.google?.maps?.places) return;
-    if (pickupRef.current) {
-      const pickupAc = new window.google.maps.places.Autocomplete(
-        pickupRef.current,
-        { types: ["geocode", "establishment"] }
-      );
-      pickupAc.addListener("place_changed", () => {
-        const place = pickupAc.getPlace();
-        setPickup(place.formatted_address || place.name || "");
-      });
-    }
-    if (destRef.current) {
-      const destAc = new window.google.maps.places.Autocomplete(
-        destRef.current,
-        { types: ["geocode", "establishment"] }
-      );
-      destAc.addListener("place_changed", () => {
-        const place = destAc.getPlace();
-        setDestination(place.formatted_address || place.name || "");
-      });
-    }
-  }, []);
+  const searchAddress = useCallback(
+    async (
+      query: string,
+      setter: (results: NominatimResult[]) => void,
+      showSetter: (show: boolean) => void
+    ) => {
+      if (query.length < 3) {
+        setter([]);
+        showSetter(false);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=us&limit=5&addressdetails=1`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        const data: NominatimResult[] = await res.json();
+        setter(data);
+        showSetter(data.length > 0);
+      } catch {
+        setter([]);
+        showSetter(false);
+      }
+    },
+    []
+  );
+
+  function handlePickupChange(value: string) {
+    setPickup(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      searchAddress(value, setPickupSuggestions, setShowPickupDropdown);
+    }, 300);
+  }
+
+  function handleDestChange(value: string) {
+    setDestination(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      searchAddress(value, setDestSuggestions, setShowDestDropdown);
+    }, 300);
+  }
+
+  function selectPickup(result: NominatimResult) {
+    setPickup(result.display_name);
+    setShowPickupDropdown(false);
+    setPickupSuggestions([]);
+  }
+
+  function selectDest(result: NominatimResult) {
+    setDestination(result.display_name);
+    setShowDestDropdown(false);
+    setDestSuggestions([]);
+  }
 
   useEffect(() => {
-    if (mapsLoadedRef.current) return;
-    mapsLoadedRef.current = true;
-
-    if (window.google?.maps?.places) {
-      const timer = setTimeout(initAutocomplete, 0);
-      return () => clearTimeout(timer);
+    function handleClickOutside(e: MouseEvent) {
+      if (pickupRef.current && !pickupRef.current.contains(e.target as Node)) {
+        setShowPickupDropdown(false);
+      }
+      if (destRef.current && !destRef.current.contains(e.target as Node)) {
+        setShowDestDropdown(false);
+      }
     }
-
-    window.initGoogleMaps = () => initAutocomplete();
-    const existing = document.querySelector('script[src*="maps.googleapis.com"]');
-    if (!existing) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
-  }, [initAutocomplete]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   function handleContinue() {
     if (!pickup || !destination || !selectedRide) return;
@@ -120,7 +132,7 @@ export default function BookingForm() {
     <div className="space-y-8">
       {/* Location inputs */}
       <div className="space-y-4">
-        <div>
+        <div ref={pickupRef} className="relative">
           <label
             htmlFor="pickup"
             className="block text-sm font-medium text-gray-700 mb-1"
@@ -128,16 +140,32 @@ export default function BookingForm() {
             Pickup Location
           </label>
           <input
-            ref={pickupRef}
             id="pickup"
             type="text"
             placeholder="Enter pickup address"
             value={pickup}
-            onChange={(e) => setPickup(e.target.value)}
+            onChange={(e) => handlePickupChange(e.target.value)}
+            onFocus={() => {
+              if (pickupSuggestions.length > 0) setShowPickupDropdown(true);
+            }}
+            autoComplete="off"
             className="w-full px-4 py-3 rounded-xl border border-burgundy-200 focus:outline-none focus:ring-2 focus:ring-burgundy focus:border-transparent text-gray-900 placeholder-gray-400"
           />
+          {showPickupDropdown && pickupSuggestions.length > 0 && (
+            <ul className="absolute z-50 w-full bg-white border border-burgundy-200 rounded-xl mt-1 shadow-lg max-h-60 overflow-y-auto">
+              {pickupSuggestions.map((s) => (
+                <li
+                  key={s.place_id}
+                  onClick={() => selectPickup(s)}
+                  className="px-4 py-3 hover:bg-burgundy-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
+                >
+                  {s.display_name}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        <div>
+        <div ref={destRef} className="relative">
           <label
             htmlFor="destination"
             className="block text-sm font-medium text-gray-700 mb-1"
@@ -145,14 +173,30 @@ export default function BookingForm() {
             Destination
           </label>
           <input
-            ref={destRef}
             id="destination"
             type="text"
             placeholder="Enter destination address"
             value={destination}
-            onChange={(e) => setDestination(e.target.value)}
+            onChange={(e) => handleDestChange(e.target.value)}
+            onFocus={() => {
+              if (destSuggestions.length > 0) setShowDestDropdown(true);
+            }}
+            autoComplete="off"
             className="w-full px-4 py-3 rounded-xl border border-burgundy-200 focus:outline-none focus:ring-2 focus:ring-burgundy focus:border-transparent text-gray-900 placeholder-gray-400"
           />
+          {showDestDropdown && destSuggestions.length > 0 && (
+            <ul className="absolute z-50 w-full bg-white border border-burgundy-200 rounded-xl mt-1 shadow-lg max-h-60 overflow-y-auto">
+              {destSuggestions.map((s) => (
+                <li
+                  key={s.place_id}
+                  onClick={() => selectDest(s)}
+                  className="px-4 py-3 hover:bg-burgundy-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
+                >
+                  {s.display_name}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
