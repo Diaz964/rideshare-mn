@@ -24,8 +24,8 @@ interface SquareCard {
   destroy: () => Promise<void>;
 }
 
-const SQUARE_APP_ID = "sandbox-sq0idb-HKzxkoVJeTcCLlnzoYr-aw";
-const SQUARE_LOCATION_ID = "LK9Z0XS4X55MS";
+const SQUARE_APP_ID = "sq0idp-XTk2E6OzeXLZC9n_Q-K-8A";
+const SQUARE_LOCATION_ID = "X8K5DY09A3KP4";
 
 interface PaymentFormProps {
   pickup: string;
@@ -90,7 +90,7 @@ export default function PaymentForm({
     }
 
     const script = document.createElement("script");
-    script.src = "https://sandbox.web.squarecdn.com/v1/square.js";
+    script.src = "https://web.squarecdn.com/v1/square.js";
     script.onload = () => initializeCard();
     script.onerror = () => {
       setError("Failed to load payment SDK. Please check your connection.");

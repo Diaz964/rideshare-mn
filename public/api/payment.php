@@ -44,7 +44,7 @@ if (!$input || !isset($input['sourceId']) || !isset($input['amount'])) {
     exit;
 }
 
-$SQUARE_API_URL = 'https://connect.squareupsandbox.com/v2/payments';
+$SQUARE_API_URL = 'https://connect.squareup.com/v2/payments';
 
 $payload = json_encode([
     'source_id' => $input['sourceId'],
