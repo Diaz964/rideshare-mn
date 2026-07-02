@@ -107,7 +107,7 @@ export default function PaymentForm({
     try {
       const result = await cardRef.current.tokenize();
       if (result.status === "OK" && result.token) {
-        const response = await fetch("/api/payment", {
+        const response = await fetch("/api/payment.php", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
