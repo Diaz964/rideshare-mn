@@ -6,31 +6,48 @@ import { useRouter } from "next/navigation";
 interface NominatimResult {
   display_name: string;
   place_id: number;
+  lat: string;
+  lon: string;
 }
 
-const RIDE_OPTIONS = [
-  {
-    id: "standard",
-    name: "Standard",
-    description: "Affordable everyday rides",
-    price: 12.5,
-    eta: "5 min",
-  },
-  {
-    id: "comfort",
-    name: "Comfort",
-    description: "Extra legroom & quiet ride",
-    price: 18.0,
-    eta: "8 min",
-  },
-  {
-    id: "xl",
-    name: "XL",
-    description: "Up to 6 passengers",
-    price: 24.0,
-    eta: "10 min",
-  },
-];
+const BASE_FARE = 3.5;
+const PER_MILE_RATE = 1.75;
+const COMFORT_MULTIPLIER = 1.5;
+const XL_MULTIPLIER = 2.0;
+const MIN_FARE = 7.0;
+
+function haversineDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 3959;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function calculateFare(miles: number, multiplier: number): number {
+  const fare = BASE_FARE + miles * PER_MILE_RATE * multiplier;
+  return Math.max(fare, MIN_FARE);
+}
+
+interface RideOption {
+  id: string;
+  name: string;
+  description: string;
+  multiplier: number;
+  eta: string;
+  price: number;
+}
 
 export default function BookingForm() {
   const router = useRouter();
@@ -43,9 +60,62 @@ export default function BookingForm() {
   const [destSuggestions, setDestSuggestions] = useState<NominatimResult[]>([]);
   const [showPickupDropdown, setShowPickupDropdown] = useState(false);
   const [showDestDropdown, setShowDestDropdown] = useState(false);
+  const [pickupCoords, setPickupCoords] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
+  const [destCoords, setDestCoords] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [rideOptions, setRideOptions] = useState<RideOption[]>([]);
   const pickupRef = useRef<HTMLDivElement>(null);
   const destRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    if (pickupCoords && destCoords) {
+      const miles = haversineDistance(
+        pickupCoords.lat,
+        pickupCoords.lon,
+        destCoords.lat,
+        destCoords.lon
+      );
+      const routeMiles = miles * 1.3;
+      setDistance(routeMiles);
+      setRideOptions([
+        {
+          id: "standard",
+          name: "Standard",
+          description: "Affordable everyday rides",
+          multiplier: 1,
+          eta: `${Math.max(5, Math.round(routeMiles * 2))} min`,
+          price: calculateFare(routeMiles, 1),
+        },
+        {
+          id: "comfort",
+          name: "Comfort",
+          description: "Extra legroom & quiet ride",
+          multiplier: COMFORT_MULTIPLIER,
+          eta: `${Math.max(8, Math.round(routeMiles * 2.5))} min`,
+          price: calculateFare(routeMiles, COMFORT_MULTIPLIER),
+        },
+        {
+          id: "xl",
+          name: "XL",
+          description: "Up to 6 passengers",
+          multiplier: XL_MULTIPLIER,
+          eta: `${Math.max(10, Math.round(routeMiles * 3))} min`,
+          price: calculateFare(routeMiles, XL_MULTIPLIER),
+        },
+      ]);
+    } else {
+      setDistance(null);
+      setRideOptions([]);
+      setSelectedRide("");
+    }
+  }, [pickupCoords, destCoords]);
 
   const searchAddress = useCallback(
     async (
@@ -76,6 +146,7 @@ export default function BookingForm() {
 
   function handlePickupChange(value: string) {
     setPickup(value);
+    setPickupCoords(null);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       searchAddress(value, setPickupSuggestions, setShowPickupDropdown);
@@ -84,6 +155,7 @@ export default function BookingForm() {
 
   function handleDestChange(value: string) {
     setDestination(value);
+    setDestCoords(null);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       searchAddress(value, setDestSuggestions, setShowDestDropdown);
@@ -92,12 +164,14 @@ export default function BookingForm() {
 
   function selectPickup(result: NominatimResult) {
     setPickup(result.display_name);
+    setPickupCoords({ lat: parseFloat(result.lat), lon: parseFloat(result.lon) });
     setShowPickupDropdown(false);
     setPickupSuggestions([]);
   }
 
   function selectDest(result: NominatimResult) {
     setDestination(result.display_name);
+    setDestCoords({ lat: parseFloat(result.lat), lon: parseFloat(result.lon) });
     setShowDestDropdown(false);
     setDestSuggestions([]);
   }
@@ -117,7 +191,7 @@ export default function BookingForm() {
 
   function handleContinue() {
     if (!pickup || !destination || !selectedRide) return;
-    const ride = RIDE_OPTIONS.find((r) => r.id === selectedRide);
+    const ride = rideOptions.find((r) => r.id === selectedRide);
     if (!ride) return;
     const params = new URLSearchParams({
       pickup,
@@ -125,7 +199,7 @@ export default function BookingForm() {
       ride: ride.id,
       price: ride.price.toFixed(2),
     });
-    router.push(`/book/payment?${params.toString()}`);
+    router.push(`/book/payment/?${params.toString()}`);
   }
 
   return (
@@ -200,13 +274,25 @@ export default function BookingForm() {
         </div>
       </div>
 
+      {/* Distance info */}
+      {distance !== null && (
+        <div className="bg-burgundy-50 rounded-xl p-3 border border-burgundy-100 text-center">
+          <span className="text-sm text-gray-600">
+            Estimated distance:{" "}
+            <span className="font-semibold text-burgundy">
+              {distance.toFixed(1)} miles
+            </span>
+          </span>
+        </div>
+      )}
+
       {/* Ride options */}
-      {pickup && destination && (
+      {rideOptions.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-burgundy-dark">
             Choose Your Ride
           </h3>
-          {RIDE_OPTIONS.map((ride) => (
+          {rideOptions.map((ride) => (
             <button
               key={ride.id}
               onClick={() => setSelectedRide(ride.id)}

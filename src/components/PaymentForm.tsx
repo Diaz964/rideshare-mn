@@ -75,7 +75,7 @@ export default function PaymentForm({
 
   useEffect(() => {
     const existingScript = document.querySelector(
-      'script[src*="squarecdn.com"], script[src*="squareup.com"]'
+      'script[src*="sandbox.web.squarecdn.com"], script[src*="squarecdn.com"], script[src*="squareup.com"]'
     );
     if (existingScript) {
       if (window.Square) {
@@ -90,7 +90,7 @@ export default function PaymentForm({
     }
 
     const script = document.createElement("script");
-    script.src = "https://web.squarecdn.com/v1/square.js";
+    script.src = "https://sandbox.web.squarecdn.com/v1/square.js";
     script.onload = () => initializeCard();
     script.onerror = () => {
       setError("Failed to load payment SDK. Please check your connection.");

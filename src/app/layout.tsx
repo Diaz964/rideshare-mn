@@ -28,24 +28,25 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `if(location.protocol==='http:'&&location.hostname!=='localhost'){location.replace('https://'+location.host+location.pathname+location.search+location.hash);}`,
+            }}
+          />
+        </head>
       <body className="min-h-full flex flex-col">
         <header className="bg-burgundy text-white">
           <nav className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
             <Link href="/" className="text-2xl font-bold tracking-tight">
               XELAJU
             </Link>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4 sm:gap-6">
               <Link
                 href="/"
                 className="text-sm font-medium text-burgundy-100 hover:text-white transition-colors"
               >
                 Home
-              </Link>
-              <Link
-                href="/drive"
-                className="text-sm font-medium text-burgundy-100 hover:text-white transition-colors"
-              >
-                Drive with Us
               </Link>
               <Link
                 href="/admin"
@@ -64,7 +65,15 @@ export default function RootLayout({
         </header>
         <main className="flex-1">{children}</main>
         <footer className="bg-burgundy-900 text-burgundy-200 py-8">
-          <div className="max-w-6xl mx-auto px-6 text-center text-sm space-y-2">
+          <div className="max-w-6xl mx-auto px-6 text-center text-sm space-y-3">
+            <div>
+              <Link
+                href="/drive"
+                className="inline-block bg-white text-burgundy-900 font-semibold px-6 py-2 rounded-full hover:bg-burgundy-50 transition-colors"
+              >
+                Drive with Us — Apply Now
+              </Link>
+            </div>
             <div>
               <a
                 href="tel:6125582880"
