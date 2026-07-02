@@ -13,6 +13,22 @@ export default function BookPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-burgundy-100 p-6">
           <BookingForm />
         </div>
+
+        <div className="mt-8 bg-white rounded-2xl shadow-sm border border-burgundy-100 p-6 text-center">
+          <p className="text-sm text-gray-500 mb-2">
+            Prefer to book by phone?
+          </p>
+          <a
+            href="tel:6125582880"
+            className="inline-flex items-center gap-2 text-xl font-bold text-burgundy hover:text-burgundy-dark transition-colors"
+          >
+            <span className="text-2xl">📞</span>
+            (612) 558-2880
+          </a>
+          <p className="text-xs text-gray-400 mt-1">
+            Available 24/7 for ride bookings
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -48,8 +48,26 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* Drive with us */}
       <section className="py-20 px-6 bg-white">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-burgundy-dark mb-4">
+            Want to Drive with Us?
+          </h2>
+          <p className="text-lg text-gray-600 mb-8">
+            Earn money on your own schedule. Join the XELAJU driver team today.
+          </p>
+          <Link
+            href="/drive"
+            className="inline-block bg-burgundy-900 text-white font-semibold text-lg px-8 py-4 rounded-full hover:bg-burgundy-dark transition-colors shadow-lg"
+          >
+            Apply to Drive
+          </Link>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-20 px-6 bg-burgundy-50">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-burgundy mb-6">
             Ready to Go?
@@ -58,12 +76,21 @@ export default function Home() {
             Enter your pickup and destination, choose your ride, and pay — all
             in one place.
           </p>
-          <Link
-            href="/book"
-            className="inline-block bg-burgundy text-white font-semibold text-lg px-8 py-4 rounded-full hover:bg-burgundy-dark transition-colors shadow-lg"
-          >
-            Get Started
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/book"
+              className="inline-block bg-burgundy text-white font-semibold text-lg px-8 py-4 rounded-full hover:bg-burgundy-dark transition-colors shadow-lg"
+            >
+              Get Started
+            </Link>
+            <span className="text-gray-400">or</span>
+            <a
+              href="tel:6125582880"
+              className="inline-flex items-center gap-2 text-lg font-semibold text-burgundy hover:text-burgundy-dark transition-colors"
+            >
+              <span>📞</span> Call (612) 558-2880
+            </a>
+          </div>
         </div>
       </section>
     </div>

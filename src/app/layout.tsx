@@ -42,6 +42,12 @@ export default function RootLayout({
                 Home
               </Link>
               <Link
+                href="/drive"
+                className="text-sm font-medium text-burgundy-100 hover:text-white transition-colors"
+              >
+                Drive with Us
+              </Link>
+              <Link
                 href="/admin"
                 className="text-sm font-medium text-burgundy-100 hover:text-white transition-colors"
               >
@@ -58,8 +64,20 @@ export default function RootLayout({
         </header>
         <main className="flex-1">{children}</main>
         <footer className="bg-burgundy-900 text-burgundy-200 py-8">
-          <div className="max-w-6xl mx-auto px-6 text-center text-sm">
-            &copy; {new Date().getFullYear()} XELAJU. All rights reserved.
+          <div className="max-w-6xl mx-auto px-6 text-center text-sm space-y-2">
+            <div>
+              <a
+                href="tel:6125582880"
+                className="text-burgundy-100 hover:text-white transition-colors font-medium"
+              >
+                📞 (612) 558-2880
+              </a>
+              <span className="mx-2">·</span>
+              <span>Book by phone 24/7</span>
+            </div>
+            <div>
+              &copy; {new Date().getFullYear()} XELAJU. All rights reserved.
+            </div>
           </div>
         </footer>
       </body>

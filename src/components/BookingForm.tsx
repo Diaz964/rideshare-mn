@@ -1,7 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+
+declare global {
+  interface Window {
+    google?: {
+      maps: {
+        places: {
+          Autocomplete: new (
+            input: HTMLInputElement,
+            options?: Record<string, unknown>
+          ) => GoogleAutocomplete;
+        };
+      };
+    };
+    initGoogleMaps?: () => void;
+  }
+}
+
+interface GoogleAutocomplete {
+  addListener: (event: string, callback: () => void) => void;
+  getPlace: () => { formatted_address?: string; name?: string };
+}
+
+const GOOGLE_MAPS_API_KEY = "AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8";
 
 const RIDE_OPTIONS = [
   {
@@ -32,6 +55,53 @@ export default function BookingForm() {
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [selectedRide, setSelectedRide] = useState("");
+  const pickupRef = useRef<HTMLInputElement>(null);
+  const destRef = useRef<HTMLInputElement>(null);
+  const mapsLoadedRef = useRef(false);
+
+  const initAutocomplete = useCallback(() => {
+    if (!window.google?.maps?.places) return;
+    if (pickupRef.current) {
+      const pickupAc = new window.google.maps.places.Autocomplete(
+        pickupRef.current,
+        { types: ["geocode", "establishment"] }
+      );
+      pickupAc.addListener("place_changed", () => {
+        const place = pickupAc.getPlace();
+        setPickup(place.formatted_address || place.name || "");
+      });
+    }
+    if (destRef.current) {
+      const destAc = new window.google.maps.places.Autocomplete(
+        destRef.current,
+        { types: ["geocode", "establishment"] }
+      );
+      destAc.addListener("place_changed", () => {
+        const place = destAc.getPlace();
+        setDestination(place.formatted_address || place.name || "");
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mapsLoadedRef.current) return;
+    mapsLoadedRef.current = true;
+
+    if (window.google?.maps?.places) {
+      const timer = setTimeout(initAutocomplete, 0);
+      return () => clearTimeout(timer);
+    }
+
+    window.initGoogleMaps = () => initAutocomplete();
+    const existing = document.querySelector('script[src*="maps.googleapis.com"]');
+    if (!existing) {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+  }, [initAutocomplete]);
 
   function handleContinue() {
     if (!pickup || !destination || !selectedRide) return;
@@ -58,6 +128,7 @@ export default function BookingForm() {
             Pickup Location
           </label>
           <input
+            ref={pickupRef}
             id="pickup"
             type="text"
             placeholder="Enter pickup address"
@@ -74,6 +145,7 @@ export default function BookingForm() {
             Destination
           </label>
           <input
+            ref={destRef}
             id="destination"
             type="text"
             placeholder="Enter destination address"

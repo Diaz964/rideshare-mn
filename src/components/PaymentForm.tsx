@@ -25,7 +25,7 @@ interface SquareCard {
 }
 
 const SQUARE_APP_ID = "sandbox-sq0idb-HKzxkoVJeTcCLlnzoYr-aw";
-const SQUARE_LOCATION_ID = "main";
+const SQUARE_LOCATION_ID = "LK9Z0XS4X55MS";
 
 interface PaymentFormProps {
   pickup: string;
