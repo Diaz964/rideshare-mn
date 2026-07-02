@@ -53,6 +53,8 @@ export default function BookingForm() {
   const router = useRouter();
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
+  const [riderName, setRiderName] = useState("");
+  const [riderPhone, setRiderPhone] = useState("");
   const [selectedRide, setSelectedRide] = useState("");
   const [pickupSuggestions, setPickupSuggestions] = useState<NominatimResult[]>(
     []
@@ -190,7 +192,7 @@ export default function BookingForm() {
   }, []);
 
   function handleContinue() {
-    if (!pickup || !destination || !selectedRide) return;
+    if (!pickup || !destination || !selectedRide || !riderName || !riderPhone) return;
     const ride = rideOptions.find((r) => r.id === selectedRide);
     if (!ride) return;
     const params = new URLSearchParams({
@@ -198,6 +200,8 @@ export default function BookingForm() {
       destination,
       ride: ride.id,
       price: ride.price.toFixed(2),
+      name: riderName,
+      phone: riderPhone,
     });
     router.push(`/book/payment/?${params.toString()}`);
   }
@@ -274,6 +278,42 @@ export default function BookingForm() {
         </div>
       </div>
 
+      {/* Rider info */}
+      <div className="space-y-4">
+        <div>
+          <label
+            htmlFor="riderName"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Your Name
+          </label>
+          <input
+            id="riderName"
+            type="text"
+            placeholder="Full name"
+            value={riderName}
+            onChange={(e) => setRiderName(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-burgundy-200 focus:outline-none focus:ring-2 focus:ring-burgundy focus:border-transparent text-gray-900 placeholder-gray-400"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="riderPhone"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Your Phone Number
+          </label>
+          <input
+            id="riderPhone"
+            type="tel"
+            placeholder="(555) 123-4567"
+            value={riderPhone}
+            onChange={(e) => setRiderPhone(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-burgundy-200 focus:outline-none focus:ring-2 focus:ring-burgundy focus:border-transparent text-gray-900 placeholder-gray-400"
+          />
+        </div>
+      </div>
+
       {/* Distance info */}
       {distance !== null && (
         <div className="bg-burgundy-50 rounded-xl p-3 border border-burgundy-100 text-center">
@@ -320,7 +360,7 @@ export default function BookingForm() {
       {/* Continue button */}
       <button
         onClick={handleContinue}
-        disabled={!pickup || !destination || !selectedRide}
+        disabled={!pickup || !destination || !selectedRide || !riderName || !riderPhone}
         className="w-full py-4 rounded-full bg-burgundy text-white font-semibold text-lg hover:bg-burgundy-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-lg"
       >
         Continue to Payment

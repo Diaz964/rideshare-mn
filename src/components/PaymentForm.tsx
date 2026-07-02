@@ -32,6 +32,8 @@ interface PaymentFormProps {
   destination: string;
   rideType: string;
   price: string;
+  riderName: string;
+  riderPhone: string;
 }
 
 export default function PaymentForm({
@@ -39,6 +41,8 @@ export default function PaymentForm({
   destination,
   rideType,
   price,
+  riderName,
+  riderPhone,
 }: PaymentFormProps) {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -121,6 +125,23 @@ export default function PaymentForm({
 
         const data = await response.json();
         if (data.success) {
+          try {
+            await fetch("/api/notify.php", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                pickup,
+                destination,
+                rideType,
+                price,
+                riderName,
+                riderPhone,
+                paymentId: data.paymentId,
+              }),
+            });
+          } catch (notifyErr) {
+            console.error("Notification error:", notifyErr);
+          }
           setSuccess(true);
         } else {
           setError(data.error || "Payment failed. Please try again.");
@@ -154,6 +175,9 @@ export default function PaymentForm({
         </p>
         <p className="text-lg font-semibold text-burgundy mt-4">
           Charged: ${price}
+        </p>
+        <p className="text-sm text-gray-500 mt-2">
+          Confirmation sent to {riderPhone}
         </p>
         <Link
           href="/"

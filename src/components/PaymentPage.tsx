@@ -10,6 +10,8 @@ function PaymentContent() {
   const destination = searchParams.get("destination") || "";
   const rideType = searchParams.get("ride") || "";
   const price = searchParams.get("price") || "0.00";
+  const riderName = searchParams.get("name") || "";
+  const riderPhone = searchParams.get("phone") || "";
 
   if (!pickup || !destination || !rideType) {
     return (
@@ -40,6 +42,8 @@ function PaymentContent() {
             destination={destination}
             rideType={rideType}
             price={price}
+            riderName={riderName}
+            riderPhone={riderPhone}
           />
         </div>
       </div>

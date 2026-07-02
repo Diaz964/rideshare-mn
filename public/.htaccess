@@ -8,6 +8,7 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Serve PHP files directly
 RewriteRule ^api/payment\.php$ api/payment.php [L]
+RewriteRule ^api/notify\.php$ api/notify.php [L]
 
 # If the requested file or directory exists, serve it
 RewriteCond %{REQUEST_FILENAME} -f [OR]
