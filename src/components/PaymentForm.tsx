@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 declare global {
   interface Window {
@@ -44,10 +44,10 @@ export default function PaymentForm({
   riderName,
   riderPhone,
 }: PaymentFormProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const cardRef = useRef<SquareCard | null>(null);
   const initRef = useRef(false);
 
@@ -142,7 +142,15 @@ export default function PaymentForm({
           } catch (notifyErr) {
             console.error("Notification error:", notifyErr);
           }
-          setSuccess(true);
+          const thankYouParams = new URLSearchParams({
+            pickup,
+            destination,
+            ride: rideType,
+            price,
+            name: riderName,
+            paymentId: data.paymentId || "",
+          });
+          router.push(`/book/thank-you/?${thankYouParams.toString()}`);
         } else {
           setError(data.error || "Payment failed. Please try again.");
         }
@@ -158,35 +166,6 @@ export default function PaymentForm({
     } finally {
       setProcessing(false);
     }
-  }
-
-  if (success) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-5xl mb-4">🎉</div>
-        <h2 className="text-2xl font-bold text-burgundy-dark mb-2">
-          Ride Booked!
-        </h2>
-        <p className="text-gray-600 mb-2">
-          Your {rideType} ride has been confirmed.
-        </p>
-        <p className="text-sm text-gray-500">
-          {pickup} → {destination}
-        </p>
-        <p className="text-lg font-semibold text-burgundy mt-4">
-          Charged: ${price}
-        </p>
-        <p className="text-sm text-gray-500 mt-2">
-          Confirmation sent to {riderPhone}
-        </p>
-        <Link
-          href="/"
-          className="inline-block mt-6 bg-burgundy text-white font-semibold px-6 py-3 rounded-full hover:bg-burgundy-dark transition-colors"
-        >
-          Back to Home
-        </Link>
-      </div>
-    );
   }
 
   return (
