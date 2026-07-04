@@ -35,10 +35,10 @@ export default function RootLayout({
             }}
           />
           {/* Google Ads / GA4 gtag.js */}
-          <script async src="https://www.googletagmanager.com/gtag/js?id=AW-364349366" />
+          <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18297524930" />
           <script
             dangerouslySetInnerHTML={{
-              __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','AW-364349366');`,
+              __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','AW-18297524930');`,
             }}
           />
         </head>
