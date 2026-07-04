@@ -34,11 +34,11 @@ export default function RootLayout({
               __html: `if(location.protocol==='http:'&&location.hostname!=='localhost'){location.replace('https://'+location.host+location.pathname+location.search+location.hash);}`,
             }}
           />
-          {/* Google Ads gtag.js — replace AW-CONVERSION_ID with your actual Google Ads ID */}
-          <script async src="https://www.googletagmanager.com/gtag/js?id=AW-CONVERSION_ID" />
+          {/* Google Ads / GA4 gtag.js */}
+          <script async src="https://www.googletagmanager.com/gtag/js?id=AW-364349366" />
           <script
             dangerouslySetInnerHTML={{
-              __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','AW-CONVERSION_ID');`,
+              __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','AW-364349366');`,
             }}
           />
         </head>
