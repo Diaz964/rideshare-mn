@@ -151,10 +151,10 @@ export default function Home() {
           </p>
           <div className="grid md:grid-cols-3 gap-8">
             <ServiceCard
-              title="Airport Transfers"
-              titleEs="Transporte al Aeropuerto"
-              description="Reliable rides to and from MSP Airport and other airports."
-              descriptionEs="Viajes confiables hacia y desde el aeropuerto MSP y otros aeropuertos."
+              title="Airport Rides"
+              titleEs="Viajes al Aeropuerto"
+              description="Reliable rides to MSP Airport and other airports."
+              descriptionEs="Viajes confiables al aeropuerto MSP y otros aeropuertos."
             />
             <ServiceCard
               title="Medical Appointments"
