@@ -23,7 +23,7 @@ function ThankYouContent() {
   useEffect(() => {
     if (typeof window.gtag === "function") {
       window.gtag("event", "conversion", {
-        send_to: "AW-18297524930/CONVERSION_LABEL",
+        send_to: "AW-18297524930/RgkiCJfl8cscEMKl-JRE",
         value: parseFloat(price),
         currency: "USD",
         transaction_id: paymentId,
