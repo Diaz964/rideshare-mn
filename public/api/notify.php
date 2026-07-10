@@ -75,13 +75,14 @@ $headers .= "X-Mailer: XELAJU/1.0\r\n";
 
 $results['email'] = mail($adminEmail, $subject, $emailBody, $headers);
 
-// --- SMS NOTIFICATIONS VIA TWILIO ---
-$twilioSid = $envVars['TWILIO_ACCOUNT_SID'] ?? getenv('TWILIO_ACCOUNT_SID');
-$twilioToken = $envVars['TWILIO_AUTH_TOKEN'] ?? getenv('TWILIO_AUTH_TOKEN');
-$twilioFrom = $envVars['TWILIO_PHONE_NUMBER'] ?? getenv('TWILIO_PHONE_NUMBER');
+// --- SMS NOTIFICATIONS VIA SIGNALWIRE (Twilio-compatible LAML API) ---
+$swProject = $envVars['SIGNALWIRE_PROJECT_ID'] ?? getenv('SIGNALWIRE_PROJECT_ID');
+$swToken = $envVars['SIGNALWIRE_API_TOKEN'] ?? getenv('SIGNALWIRE_API_TOKEN');
+$swSpace = $envVars['SIGNALWIRE_SPACE_URL'] ?? getenv('SIGNALWIRE_SPACE_URL');
+$swFrom = $envVars['SIGNALWIRE_PHONE_NUMBER'] ?? getenv('SIGNALWIRE_PHONE_NUMBER');
 
-if ($twilioSid && $twilioToken && $twilioFrom) {
-    // Format phone number for Twilio (add +1 if needed)
+if ($swProject && $swToken && $swSpace && $swFrom) {
+    // Format phone number to E.164 (add +1 for US 10-digit numbers)
     function formatPhone($phone) {
         $digits = preg_replace('/[^0-9]/', '', $phone);
         if (strlen($digits) === 10) {
@@ -92,8 +93,8 @@ if ($twilioSid && $twilioToken && $twilioFrom) {
         return '+' . $digits;
     }
 
-    function sendSms($sid, $token, $from, $to, $body) {
-        $url = "https://api.twilio.com/2010-04-01/Accounts/$sid/Messages.json";
+    function sendSms($project, $token, $space, $from, $to, $body) {
+        $url = "https://$space/api/laml/2010-04-01/Accounts/$project/Messages.json";
         $data = http_build_query([
             'From' => $from,
             'To' => $to,
@@ -105,7 +106,7 @@ if ($twilioSid && $twilioToken && $twilioFrom) {
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $data,
-            CURLOPT_USERPWD => "$sid:$token",
+            CURLOPT_USERPWD => "$project:$token",
             CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
         ]);
 
@@ -119,15 +120,15 @@ if ($twilioSid && $twilioToken && $twilioFrom) {
     // SMS to rider
     if ($riderPhone) {
         $riderMsg = "XELAJU: Your " . ucfirst($rideType) . " ride is confirmed! Fare: \$$price. Pickup: $pickup. We'll be there soon!";
-        $results['sms_rider'] = sendSms($twilioSid, $twilioToken, $twilioFrom, formatPhone($riderPhone), $riderMsg);
+        $results['sms_rider'] = sendSms($swProject, $swToken, $swSpace, $swFrom, formatPhone($riderPhone), $riderMsg);
     }
 
     // SMS to admin/dispatcher
     $adminPhone = '+16125582880';
     $adminMsg = "XELAJU NEW RIDE: $riderName ($riderPhone) - " . ucfirst($rideType) . " \$$price. From: $pickup To: $destination";
-    $results['sms_admin'] = sendSms($twilioSid, $twilioToken, $twilioFrom, $adminPhone, $adminMsg);
+    $results['sms_admin'] = sendSms($swProject, $swToken, $swSpace, $swFrom, $adminPhone, $adminMsg);
 } else {
-    $results['sms_note'] = 'Twilio not configured';
+    $results['sms_note'] = 'SignalWire not configured';
 }
 
 echo json_encode(['success' => true, 'notifications' => $results]);
