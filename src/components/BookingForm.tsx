@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Fare, DEFAULT_FARES, fetchFares, computeFarePrice } from "@/lib/fares";
 
 interface NominatimResult {
   display_name: string;
@@ -10,11 +11,11 @@ interface NominatimResult {
   lon: string;
 }
 
-const BASE_FARE = 3.5;
-const PER_MILE_RATE = 1.75;
-const COMFORT_MULTIPLIER = 1.5;
-const XL_MULTIPLIER = 2.0;
-const MIN_FARE = 7.0;
+const RIDE_DESCRIPTIONS: Record<string, string> = {
+  standard: "Affordable everyday rides",
+  comfort: "Extra legroom & quiet ride",
+  xl: "Up to 6 passengers",
+};
 
 function haversineDistance(
   lat1: number,
@@ -35,16 +36,10 @@ function haversineDistance(
   return R * c;
 }
 
-function calculateFare(miles: number, multiplier: number): number {
-  const fare = BASE_FARE + miles * PER_MILE_RATE * multiplier;
-  return Math.max(fare, MIN_FARE);
-}
-
 interface RideOption {
   id: string;
   name: string;
   description: string;
-  multiplier: number;
   eta: string;
   price: number;
 }
@@ -72,9 +67,14 @@ export default function BookingForm() {
   } | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [rideOptions, setRideOptions] = useState<RideOption[]>([]);
+  const [fares, setFares] = useState<Fare[]>(DEFAULT_FARES);
   const pickupRef = useRef<HTMLDivElement>(null);
   const destRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    fetchFares().then(setFares);
+  }, []);
 
   useEffect(() => {
     if (pickupCoords && destCoords) {
@@ -85,39 +85,23 @@ export default function BookingForm() {
         destCoords.lon
       );
       const routeMiles = miles * 1.3;
+      const estMinutes = Math.max(5, Math.round(routeMiles * 2));
       setDistance(routeMiles);
-      setRideOptions([
-        {
-          id: "standard",
-          name: "Standard",
-          description: "Affordable everyday rides",
-          multiplier: 1,
-          eta: `${Math.max(5, Math.round(routeMiles * 2))} min`,
-          price: calculateFare(routeMiles, 1),
-        },
-        {
-          id: "comfort",
-          name: "Comfort",
-          description: "Extra legroom & quiet ride",
-          multiplier: COMFORT_MULTIPLIER,
-          eta: `${Math.max(8, Math.round(routeMiles * 2.5))} min`,
-          price: calculateFare(routeMiles, COMFORT_MULTIPLIER),
-        },
-        {
-          id: "xl",
-          name: "XL",
-          description: "Up to 6 passengers",
-          multiplier: XL_MULTIPLIER,
-          eta: `${Math.max(10, Math.round(routeMiles * 3))} min`,
-          price: calculateFare(routeMiles, XL_MULTIPLIER),
-        },
-      ]);
+      setRideOptions(
+        fares.map((fare) => ({
+          id: fare.id,
+          name: fare.name,
+          description: RIDE_DESCRIPTIONS[fare.id] ?? "",
+          eta: `${estMinutes} min`,
+          price: computeFarePrice(fare, routeMiles, estMinutes),
+        }))
+      );
     } else {
       setDistance(null);
       setRideOptions([]);
       setSelectedRide("");
     }
-  }, [pickupCoords, destCoords]);
+  }, [pickupCoords, destCoords, fares]);
 
   const searchAddress = useCallback(
     async (

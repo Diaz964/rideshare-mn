@@ -1,48 +1,16 @@
 "use client";
 
-import { useState } from "react";
-
-interface Fare {
-  id: string;
-  name: string;
-  baseFare: number;
-  perMile: number;
-  perMinute: number;
-  minimumFare: number;
-}
-
-const INITIAL_FARES: Fare[] = [
-  {
-    id: "standard",
-    name: "Standard",
-    baseFare: 2.5,
-    perMile: 1.75,
-    perMinute: 0.25,
-    minimumFare: 7.0,
-  },
-  {
-    id: "comfort",
-    name: "Comfort",
-    baseFare: 4.0,
-    perMile: 2.5,
-    perMinute: 0.35,
-    minimumFare: 10.0,
-  },
-  {
-    id: "xl",
-    name: "XL",
-    baseFare: 5.0,
-    perMile: 3.0,
-    perMinute: 0.45,
-    minimumFare: 14.0,
-  },
-];
+import { useState, useEffect, useCallback } from "react";
+import { Fare, DEFAULT_FARES, fetchFares, saveFares } from "@/lib/fares";
 
 export default function FaresManager() {
-  const [fares, setFares] = useState<Fare[]>(INITIAL_FARES);
+  const [fares, setFares] = useState<Fare[]>(DEFAULT_FARES);
   const [editing, setEditing] = useState<string | null>(null);
   const [editData, setEditData] = useState<Fare | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
   const [newFare, setNewFare] = useState<Fare>({
     id: "",
     name: "",
@@ -52,6 +20,22 @@ export default function FaresManager() {
     minimumFare: 0,
   });
 
+  useEffect(() => {
+    fetchFares().then((f) => {
+      setFares(f);
+      setLoading(false);
+    });
+  }, []);
+
+  const persist = useCallback(async (next: Fare[]) => {
+    setFares(next);
+    setSaving(true);
+    setStatus("idle");
+    const ok = await saveFares(next);
+    setSaving(false);
+    setStatus(ok ? "saved" : "error");
+  }, []);
+
   function handleEdit(fare: Fare) {
     setEditing(fare.id);
     setEditData({ ...fare });
@@ -59,19 +43,19 @@ export default function FaresManager() {
 
   function handleSave() {
     if (!editData) return;
-    setFares(fares.map((f) => (f.id === editData.id ? editData : f)));
+    persist(fares.map((f) => (f.id === editData.id ? editData : f)));
     setEditing(null);
     setEditData(null);
   }
 
   function handleDelete(id: string) {
-    setFares(fares.filter((f) => f.id !== id));
+    persist(fares.filter((f) => f.id !== id));
   }
 
   function handleAdd() {
     if (!newFare.name) return;
     const id = newFare.name.toLowerCase().replace(/\s+/g, "-");
-    setFares([...fares, { ...newFare, id }]);
+    persist([...fares, { ...newFare, id }]);
     setNewFare({
       id: "",
       name: "",
@@ -87,13 +71,28 @@ export default function FaresManager() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-burgundy-dark">Manage Fares</h1>
-        <button
-          onClick={() => setShowAdd(!showAdd)}
-          className="px-4 py-2 bg-burgundy text-white text-sm font-medium rounded-lg hover:bg-burgundy-dark transition-colors"
-        >
-          {showAdd ? "Cancel" : "Add Fare"}
-        </button>
+        <div className="flex items-center gap-3">
+          {saving && (
+            <span className="text-sm text-gray-400">Saving...</span>
+          )}
+          {!saving && status === "saved" && (
+            <span className="text-sm text-green-600">Saved</span>
+          )}
+          {!saving && status === "error" && (
+            <span className="text-sm text-red-500">Save failed</span>
+          )}
+          <button
+            onClick={() => setShowAdd(!showAdd)}
+            className="px-4 py-2 bg-burgundy text-white text-sm font-medium rounded-lg hover:bg-burgundy-dark transition-colors"
+          >
+            {showAdd ? "Cancel" : "Add Fare"}
+          </button>
+        </div>
       </div>
+
+      {loading && (
+        <div className="text-sm text-gray-400 mb-4">Loading fares...</div>
+      )}
 
       {showAdd && (
         <div className="bg-white rounded-xl border border-burgundy-100 p-6 mb-6">
